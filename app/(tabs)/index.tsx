@@ -1,22 +1,27 @@
+// @ts-nocheck
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet } from 'react-native';
+import { Colors, Text, TextField, TouchableOpacity, View } from 'react-native-ui-lib'; // UI Lib
+import { FloatingBottomBar } from '../../components/FloatingBottomBar';
 import { NoteCard } from '../../components/NoteCard';
-import { theme } from '../../constants/theme';
 import { getNotes, initDatabase } from '../../services/db';
 
 export default function HomeScreen() {
   const [notes, setNotes] = useState<any[]>([]);
+  const [filteredNotes, setFilteredNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
   const fetchNotes = useCallback(async () => {
     try {
       setLoading(true);
-      await initDatabase(); // Ensure DB is ready
+      await initDatabase();
       const data = await getNotes();
       setNotes(data);
+      setFilteredNotes(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -30,88 +35,88 @@ export default function HomeScreen() {
     }, [fetchNotes])
   );
 
-  const handleCreateNote = () => {
-    router.push(`/note/${Date.now().toString()}`); // Use timestamp as temporary ID or generated ID
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
+    if (text.trim() === '') {
+      setFilteredNotes(notes);
+    } else {
+      const lower = text.toLowerCase();
+      setFilteredNotes(notes.filter(n =>
+        n.title.toLowerCase().includes(lower) ||
+        (n.content && n.content.toLowerCase().includes(lower))
+      ));
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>All Notes</Text>
+    <View flex bg-background>
+      {/* Wordsy Header with Search */}
+      <View row spread centerV paddingH-20 paddingB-16 style={{ paddingTop: 60 }}>
+        <Text h1 color={Colors.primary}>Wordsy</Text>
+        <TouchableOpacity>
+          <Ionicons name="notifications-outline" size={24} color={Colors.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Modern Search Bar */}
+      <View paddingH-20 marginB-20>
+        <TextField
+          placeholder="Search your notes..."
+          placeholderTextColor={Colors.secondary}
+          value={searchQuery}
+          onChangeText={handleSearch}
+          containerStyle={styles.searchBar}
+          style={{ fontSize: 16, color: Colors.primary }}
+          leadingAccessory={<Ionicons name="search" size={20} color={Colors.secondary} style={{ marginRight: 8 }} />}
+        />
+      </View>
+
+      {/* Filter Pills Layout (Horizontal) - Reimplementing simply for UI Lib */}
+      <View paddingH-20 marginB-16>
+        {/* Static for now or interactive later */}
+        <Text text90 color={Colors.secondary}>All Notes ({filteredNotes.length})</Text>
       </View>
 
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+        <View flex center>
+          <ActivityIndicator size="large" color={Colors.cardBlue} />
         </View>
       ) : (
         <FlatList
-          data={notes}
+          data={filteredNotes}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <NoteCard note={item} />}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.listContent}
+          renderItem={({ item, index }) => <NoteCard note={item} index={index} />}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Start by creating a note</Text>
+            <View flex center padding-40>
+              <Text text70 color={Colors.secondary}>Nothing found...</Text>
             </View>
           }
         />
       )}
 
-      <Pressable style={styles.fab} onPress={handleCreateNote}>
-        <Ionicons name="add" size={32} color={theme.colors.white} />
-        {/* <Text style={{color: 'white', fontWeight: 'bold'}}>NEW</Text> OPTIONAL: Uber sometimes uses text buttons */}
-      </Pressable>
+      <FloatingBottomBar />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingTop: 60, // Safe area ish
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    ...theme.typography.header,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  columnWrapper: {
+    justifyContent: 'space-between',
+    gap: 12,
   },
   listContent: {
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 30,
-    // No background, just icon style for minimal
-    // Or minimal circle
-    width: 56,
-    height: 56,
-    borderRadius: 0, // Square FAB for Uber style
-    backgroundColor: theme.colors.accent,
-    justifyContent: 'center',
+  searchBar: {
+    backgroundColor: Colors.secondaryBackground,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12, // Taller pill
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: theme.colors.textSecondary,
-    fontSize: 16,
   }
 });

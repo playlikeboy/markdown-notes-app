@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, StyleSheet } from 'react-native';
+import { Button, Card, Colors, Text, TextField, TouchableOpacity, View } from 'react-native-ui-lib';
 import { createFolder, deleteFolder, Folder, getFolders } from '../../services/db';
-
-import { theme } from '../../constants/theme';
 
 export default function FoldersScreen() {
     const [folders, setFolders] = useState<Folder[]>([]);
@@ -54,35 +53,35 @@ export default function FoldersScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Folders</Text>
+        <View flex bg-background>
+            <View paddingT-60 paddingH-20 paddingB-20>
+                <Text h1 color={Colors.primary}>Folders</Text>
             </View>
 
             <FlatList
                 data={folders}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <View style={styles.folderRow}>
-                        <View style={styles.folderInfo}>
-                            <Ionicons name="folder" size={24} color={theme.colors.primary} />
-                            <Text style={styles.folderName}>{item.name}</Text>
+                    <Card row spread centerV padding-16 marginH-20 marginB-12 style={{ borderRadius: 16 }} backgroundColor={Colors.secondaryBackground} enableShadow={false}>
+                        <View row centerV>
+                            <Ionicons name="folder" size={24} color={Colors.primary} />
+                            <Text text70 color={Colors.primary} marginL-12>{item.name}</Text>
                         </View>
                         <TouchableOpacity onPress={() => handleDeleteFolder(item.id)}>
-                            <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
+                            <Ionicons name="trash-outline" size={20} color={Colors.danger} />
                         </TouchableOpacity>
-                    </View>
+                    </Card>
                 )}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={{ paddingBottom: 100 }}
                 ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>No folders yet.</Text>
+                    <View flex center padding-40>
+                        <Text text70 color={Colors.secondary}>No folders yet.</Text>
                     </View>
                 }
             />
 
             <Pressable style={styles.fab} onPress={() => setModalVisible(true)}>
-                <Ionicons name="add" size={32} color={theme.colors.white} />
+                <Ionicons name="add" size={32} color={Colors.white} />
             </Pressable>
 
             <Modal
@@ -93,23 +92,29 @@ export default function FoldersScreen() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalView}>
-                        <Text style={styles.modalTitle}>New Folder</Text>
-                        <TextInput
-                            style={styles.input}
+                        <Text text60 center marginB-20 color={Colors.primary}>New Folder</Text>
+                        <TextField
                             placeholder="Folder Name"
                             value={newFolderName}
                             onChangeText={setNewFolderName}
-                            autoFocus
-                            placeholderTextColor={theme.colors.textSecondary}
+                            placeholderTextColor={Colors.secondary}
+                            style={styles.input}
+                            containerStyle={styles.inputContainer}
                         />
-                        <View style={styles.modalButtons}>
-                            <Pressable style={[styles.button, styles.buttonCancel]} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.textStyle}>Cancel</Text>
-                            </Pressable>
-                            <Pressable style={[styles.button, styles.buttonSave]} onPress={handleCreateFolder}>
-                                <Text style={[styles.textStyle, { color: 'white' }]}>Create</Text>
-                            </Pressable>
-                        </View>
+                        <Button
+                            label="Create Folder"
+                            backgroundColor={Colors.primary}
+                            color={Colors.white}
+                            onPress={handleCreateFolder}
+                            style={{ marginTop: 16 }}
+                        />
+                        <Button
+                            label="Cancel"
+                            link
+                            color={Colors.secondary}
+                            marginT-16
+                            onPress={() => setModalVisible(false)}
+                        />
                     </View>
                 </View>
             </Modal>
@@ -118,47 +123,14 @@ export default function FoldersScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-        paddingTop: 60,
-    },
-    header: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-    },
-    headerTitle: {
-        ...theme.typography.header,
-    },
-    listContent: {
-        paddingHorizontal: 20,
-    },
-    folderRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-    },
-    folderInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    folderName: {
-        fontSize: 18,
-        fontWeight: '500',
-        color: theme.colors.primary,
-    },
     fab: {
         position: 'absolute',
         bottom: 30,
         right: 30,
         width: 56,
         height: 56,
-        borderRadius: 0, // Square FAB
-        backgroundColor: theme.colors.accent,
+        borderRadius: 28,
+        backgroundColor: Colors.primary, // Black
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -167,70 +139,26 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 8,
     },
-    emptyState: {
-        padding: 40,
-        alignItems: 'center',
-    },
-    emptyText: {
-        color: theme.colors.textSecondary,
-        fontSize: 16,
-    },
-    // Modal
     modalOverlay: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-end',
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalView: {
-        width: '85%',
-        backgroundColor: theme.colors.background,
-        borderRadius: 0, // Square modal
+        backgroundColor: 'white',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         padding: 24,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-    },
-    modalTitle: {
-        ...theme.typography.subHeader,
-        marginBottom: 20,
+        paddingBottom: 40,
     },
     input: {
-        width: '100%',
-        backgroundColor: theme.colors.secondaryBackground,
-        borderRadius: 0,
-        padding: 16,
-        marginBottom: 24,
-        fontSize: 16,
-        color: theme.colors.text,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+        fontSize: 18,
+        color: Colors.primary,
+        paddingVertical: 12,
     },
-    modalButtons: {
-        flexDirection: 'row',
-        gap: 16,
-        width: '100%',
-        justifyContent: 'space-between',
-    },
-    button: {
-        flex: 1,
-        borderRadius: 0,
-        padding: 16,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-    },
-    buttonCancel: {
-        backgroundColor: theme.colors.background,
-        borderColor: theme.colors.primary, // Distinct cancel
-    },
-    buttonSave: {
-        backgroundColor: theme.colors.primary,
-        borderColor: theme.colors.primary,
-    },
-    textStyle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: theme.colors.primary,
-    },
+    inputContainer: {
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.border,
+        marginBottom: 20,
+    }
 });
