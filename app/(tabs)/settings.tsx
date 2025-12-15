@@ -3,6 +3,8 @@ import * as SQLite from 'expo-sqlite';
 import { useState } from 'react';
 import { Alert, Pressable, SectionList, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { theme } from '../../constants/theme';
+
 export default function SettingsScreen() {
     const [darkMode, setDarkMode] = useState(false);
 
@@ -84,7 +86,9 @@ export default function SettingsScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Settings</Text>
+            <View style={styles.headerContainer}>
+                <Text style={styles.header}>Settings</Text>
+            </View>
 
             <SectionList
                 sections={sections}
@@ -93,26 +97,22 @@ export default function SettingsScreen() {
                     <Text style={styles.sectionHeader}>{title}</Text>
                 )}
                 renderItem={({ item, index, section }) => {
-                    const isFirst = index === 0;
                     const isLast = index === section.data.length - 1;
 
                     return (
                         <View style={[
                             styles.row,
-                            isFirst && { borderTopLeftRadius: 10, borderTopRightRadius: 10 },
-                            isLast && { borderBottomLeftRadius: 10, borderBottomRightRadius: 10 },
-                            !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#c7c7cc', marginLeft: 16 } // Separator inset
+                            !isLast && { borderBottomWidth: 1, borderBottomColor: theme.colors.border }
                         ]}>
-                            <View style={[styles.rowLeft, !isLast && { marginLeft: -16, paddingLeft: 16 }]}>
-                                {/* Hack to fix alignment with inset separator */}
+                            <View style={styles.rowLeft}>
                                 <View style={[styles.iconContainer, item.destructive && styles.iconDestructive]}>
-                                    <Ionicons name={item.icon as any} size={20} color={item.destructive ? '#FF3B30' : '#007AFF'} />
+                                    <Ionicons name={item.icon as any} size={20} color={item.destructive ? theme.colors.white : theme.colors.primary} />
                                 </View>
                                 <Text style={[styles.rowTitle, item.destructive && styles.textDestructive]}>{item.title}</Text>
                             </View>
 
                             {item.type === 'switch' && (
-                                <Switch value={!!item.value} onValueChange={item.onValueChange} />
+                                <Switch value={!!item.value} onValueChange={item.onValueChange} trackColor={{ false: '#ccc', true: theme.colors.primary }} />
                             )}
 
                             {item.type === 'info' && (
@@ -121,7 +121,7 @@ export default function SettingsScreen() {
 
                             {item.type === 'button' && (
                                 <Pressable onPress={item.onPress}>
-                                    <Ionicons name="chevron-forward" size={20} color="#c7c7cc" />
+                                    <Ionicons name="chevron-forward" size={20} color={theme.colors.border} />
                                 </Pressable>
                             )}
                         </View>
@@ -136,72 +136,64 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f2f2f7', // iOS grouped table background
+        backgroundColor: theme.colors.background,
         paddingTop: 60,
     },
-    header: {
-        fontSize: 34,
-        fontWeight: 'bold',
+    headerContainer: {
         paddingHorizontal: 20,
         marginBottom: 20,
-        color: '#000',
+    },
+    header: {
+        ...theme.typography.header,
     },
     listContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 0, // Edge-to-edge for Uber style
         paddingBottom: 40,
     },
     sectionHeader: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#8e8e93',
-        textTransform: 'uppercase',
+        ...theme.typography.label,
+        paddingHorizontal: 20,
         marginTop: 24,
         marginBottom: 8,
-        marginLeft: 4, // Align with cell content better
+        textTransform: 'uppercase',
     },
     row: {
-        backgroundColor: '#fff',
+        backgroundColor: theme.colors.background,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-    },
-    // Rounded corners logic handled potentially in renderItem or simpler: just use full blocks for now like iOS often does
-    // But for a true group look we want top/bottom radius. Let's try a simpler approach where we just give them all radius if they are standalone, or...
-    // simpler: Let's make the list item visually clean.
-    rowWrapper: {
-        overflow: 'hidden',
-        // We will apply borderRadius to the first and last items in renderItem logic ideally
-        // For now let's just use a block style that looks "Modern Group" (inset)
-        borderRadius: 10,
-        marginBottom: 0,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
     },
     rowLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 16,
     },
     iconContainer: {
-        width: 30,
-        height: 30,
-        borderRadius: 6,
-        backgroundColor: '#E6F4FE',
+        width: 36,
+        height: 36,
+        borderRadius: 0, // Square icons
+        backgroundColor: theme.colors.secondaryBackground,
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     iconDestructive: {
-        backgroundColor: '#FFE5E5', // Lighter red bg
+        backgroundColor: theme.colors.danger,
+        borderColor: theme.colors.danger,
     },
     rowTitle: {
-        fontSize: 17,
-        color: '#000',
+        fontSize: 16,
+        fontWeight: '500',
+        color: theme.colors.primary,
     },
     textDestructive: {
-        color: '#FF3B30',
+        color: theme.colors.danger,
     },
     infoText: {
-        fontSize: 17,
-        color: '#8e8e93',
+        fontSize: 16,
+        color: theme.colors.textSecondary,
     },
 });

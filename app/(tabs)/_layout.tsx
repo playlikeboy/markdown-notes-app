@@ -2,34 +2,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import { BlurView } from 'expo-blur';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform } from 'react-native';
+import { theme } from '../../constants/theme';
 
 export default function TabLayout() {
-  const activeColor = '#FEA00A'; // Matches our app accent
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: activeColor,
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: '#999999',
         headerShown: false,
         tabBarStyle: {
-          position: 'absolute', // Required for blur effect to show content behind
-          borderTopWidth: 0,
-          elevation: 0, // Android shadow removal
-          height: 85, // Taller tab bar
+          backgroundColor: theme.colors.background,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+          elevation: 0,
+          height: Platform.OS === 'ios' ? 85 : 65,
           paddingTop: 10,
         },
-        tabBarBackground: () => (
-          Platform.OS === 'ios' ? (
-            <BlurView tint="light" intensity={80} style={StyleSheet.absoluteFill} />
-          ) : undefined
-          // On Android, default translucent or solid white is fine if blur not supported heavily
-        ),
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
+          fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
         }
       }}>
       <Tabs.Screen
@@ -37,7 +31,7 @@ export default function TabLayout() {
         options={{
           title: 'Notes',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "document-text" : "document-text-outline"} size={28} color={color} />
+            <Ionicons name="document-text" size={24} color={color} />
           ),
         }}
       />
@@ -46,7 +40,7 @@ export default function TabLayout() {
         options={{
           title: 'Folders',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "folder" : "folder-outline"} size={28} color={color} />
+            <Ionicons name="folder" size={24} color={color} />
           ),
         }}
       />
@@ -55,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "settings" : "settings-outline"} size={28} color={color} />
+            <Ionicons name="settings-sharp" size={24} color={color} />
           ),
         }}
       />

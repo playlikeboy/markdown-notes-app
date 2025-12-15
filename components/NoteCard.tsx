@@ -9,6 +9,8 @@ interface Note {
     updatedAt: number;
 }
 
+import { theme } from '../constants/theme';
+
 interface NoteCardProps {
     note: Note;
 }
@@ -20,18 +22,18 @@ export const NoteCard = ({ note }: NoteCardProps) => {
         router.push(`/note/${note.id}`);
     };
 
-    const dateStr = new Date(note.updatedAt).toLocaleDateString();
+    const dateStr = new Date(Number(note.updatedAt)).toLocaleDateString(undefined, {
+        month: 'short', day: 'numeric'
+    });
 
     return (
         <Pressable onPress={handlePress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
             <View style={styles.content}>
-                <Text style={styles.title} numberOfLines={1}>{note.title || 'Untitled'}</Text>
-                <View style={styles.row}>
-                    <Text style={styles.date}>{dateStr}</Text>
-                    <Text style={styles.preview} numberOfLines={1}>
-                        {note.content.replace(/[#*`]/g, '') || 'No additional text'}
-                    </Text>
-                </View>
+                <Text style={styles.title} numberOfLines={1}>{note.title || 'Untitled Note'}</Text>
+                <Text style={styles.preview} numberOfLines={2}>
+                    {note.content.replace(/[#*`]/g, '') || 'No additional text'}
+                </Text>
+                <Text style={styles.date}>{dateStr}</Text>
             </View>
         </Pressable>
     );
@@ -39,38 +41,34 @@ export const NoteCard = ({ note }: NoteCardProps) => {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: '#fff',
-        paddingVertical: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#c7c7cc', // iOS separator color
-        flexDirection: 'column',
-        gap: 4,
+        backgroundColor: theme.colors.background,
+        padding: theme.spacing.m,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        marginBottom: theme.spacing.s,
+        borderRadius: 0, // Square corners
     },
     pressed: {
-        backgroundColor: '#f2f2f7',
+        backgroundColor: theme.colors.secondaryBackground,
     },
     content: {
-        gap: 2,
+        gap: 4,
     },
     title: {
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '600',
-        color: '#000',
-        marginBottom: 2,
+        color: theme.colors.text,
+        letterSpacing: -0.5,
     },
     preview: {
-        fontSize: 15,
-        color: '#8e8e93', // iOS secondary label
+        fontSize: 14,
+        color: theme.colors.textSecondary,
         lineHeight: 20,
     },
     date: {
-        fontSize: 14,
-        color: '#8e8e93',
-        marginRight: 4,
+        fontSize: 12,
+        color: '#888',
+        marginTop: 8,
+        alignSelf: 'flex-end',
     },
-    row: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        gap: 6,
-    }
 });

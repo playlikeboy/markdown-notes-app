@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NoteCard } from '../../components/NoteCard';
+import { theme } from '../../constants/theme';
 import { getNotes, initDatabase } from '../../services/db';
 
 export default function HomeScreen() {
@@ -36,12 +37,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notes</Text>
+        <Text style={styles.headerTitle}>All Notes</Text>
       </View>
 
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -51,14 +52,15 @@ export default function HomeScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No notes yet</Text>
+              <Text style={styles.emptyText}>Start by creating a note</Text>
             </View>
           }
         />
       )}
 
       <Pressable style={styles.fab} onPress={handleCreateNote}>
-        <Ionicons name="create-outline" size={28} color="#FEA00A" />
+        <Ionicons name="add" size={32} color={theme.colors.white} />
+        {/* <Text style={{color: 'white', fontWeight: 'bold'}}>NEW</Text> OPTIONAL: Uber sometimes uses text buttons */}
       </Pressable>
     </View>
   );
@@ -67,17 +69,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
     paddingTop: 60, // Safe area ish
   },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontSize: 34,
-    fontWeight: 'bold',
-    color: '#000',
+    ...theme.typography.header,
   },
   centered: {
     flex: 1,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   fab: {
     position: 'absolute',
@@ -94,24 +94,24 @@ const styles = StyleSheet.create({
     right: 30,
     // No background, just icon style for minimal
     // Or minimal circle
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#fff',
+    width: 56,
+    height: 56,
+    borderRadius: 0, // Square FAB for Uber style
+    backgroundColor: theme.colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
   },
   emptyState: {
     padding: 40,
     alignItems: 'center',
   },
   emptyText: {
+    color: theme.colors.textSecondary,
     fontSize: 16,
-    color: '#999',
   }
 });

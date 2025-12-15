@@ -1,34 +1,42 @@
+import { RichText, Toolbar, useEditorBridge } from '@10play/tentap-editor';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { MarkdownEditor } from '../../components/MarkdownEditor';
-import { MarkdownPreview } from '../../components/MarkdownPreview';
-import { deleteNote, Folder, getFolders, getNoteById, saveNote } from '../../services/db';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { theme } from '../../constants/theme';
+import { deleteNote, Folder, getFolders, getNoteById, updateNote } from '../../services/db';
 
 export default function NoteEditorScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
 
-    const [loading, setLoading] = useState(true);
-    const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+    // Editor bridge
+    const editor = useEditorBridge({
+        autofocus: true,
+        avoidIosKeyboard: true,
+        initialContent: '',
+    });
+
     const [title, setTitle] = useState('');
-    const [content, setContent] = useState('');
-    const [folderId, setFolderId] = useState<string | null>(null);
+    // We don't need 'content' state for editor, we use editor.getHTML()
+    const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Folder selection
+    // Folder logic
+    const [folderId, setFolderId] = useState<string | null>(null);
     const [folders, setFolders] = useState<Folder[]>([]);
     const [folderModalVisible, setFolderModalVisible] = useState(false);
     const [currentFolderName, setCurrentFolderName] = useState('No Folder');
 
-    // Debounce ref
-    const saveTimeoutRef = useRef<any>(null); // Use any to avoid NodeJS/Browser timeout mismatch
+    const saveTimeoutRef = useRef<any>(null);
 
     useEffect(() => {
-        loadNote();
-        loadFolders();
-    }, [id]);
+        if (editor) {
+            // Load initial content when editor is ready
+            loadNote();
+            loadFolders();
+        }
+    }, [id, editor]); // Wait for editor
 
     const loadFolders = async () => {
         const data = await getFolders();
@@ -41,12 +49,15 @@ export default function NoteEditorScreen() {
             const note = await getNoteById(id);
             if (note) {
                 setTitle(note.title);
-                setContent(note.content);
                 setFolderId(note.folderId);
 
-                // Resolve folder name
+                // Set editor content
+                if (editor) {
+                    editor.setContent(note.content || '');
+                }
+
                 if (note.folderId) {
-                    const allFolders = await getFolders(); // re-fetch to be sure
+                    const allFolders = await getFolders();
                     const f = (allFolders as Folder[]).find((f: Folder) => f.id === note.folderId);
                     if (f) setCurrentFolderName(f.name);
                 }
@@ -58,68 +69,72 @@ export default function NoteEditorScreen() {
         }
     };
 
-    const handeSave = useCallback(async (newTitle: string, newContent: string, newFolderId: string | null) => {
-        if (!id) return;
+    const handleSave = async () => {
+        if (!id || !editor) return;
         setIsSaving(true);
         try {
-            await saveNote(id, newTitle, newContent, newFolderId, []);
+            const htmlContent = await editor.getHTML();
+            await updateNote(id, title, htmlContent, folderId);
         } catch (e) {
             console.error(e);
         } finally {
             setIsSaving(false);
         }
-    }, [id]);
+    };
 
+    // Auto-save debouncer
+    const triggerAutoSave = () => {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Trigger save on title change
     const onChangeTitle = (text: string) => {
         setTitle(text);
-        debouncedSave(text, content, folderId);
+        triggerAutoSave();
     };
 
-    const onChangeContent = (text: string) => {
-        setContent(text);
-        debouncedSave(title, text, folderId);
-    };
+    // Trigger save on editor content change usually requires a listener or hook
+    // simpler approach: save on back or periodically, or use manual save for now to ensure stability
+    // TenTap doesn't have a direct 'onChange' prop on RichText component easily accessible for rapid updates without bridge listeners.
+    // We will save on component unmount and periodically.
+
+    // Adding interval saver for safety
+    useEffect(() => {
+        const interval = setInterval(() => {
+            handleSave();
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [title, folderId, editor]);
+
 
     const onSelectFolder = (newFolderId: string | null, name: string) => {
         setFolderId(newFolderId);
         setCurrentFolderName(name);
         setFolderModalVisible(false);
-        handeSave(title, content, newFolderId);
+        handleSave(); // Save immediately after folder change
     }
 
-    const debouncedSave = (t: string, c: string, fId: string | null) => {
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = setTimeout(() => {
-            handeSave(t, c, fId);
-        }, 1000); // Auto-save after 1s
-    };
-
     const handleDelete = () => {
-        Alert.alert(
-            "Delete Note",
-            "Are you sure you want to delete this note?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        if (id) await deleteNote(id);
-                        router.back();
-                    }
+        Alert.alert("Delete Note", "Irreversible action.", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Delete",
+                style: "destructive",
+                onPress: async () => {
+                    if (id) await deleteNote(id);
+                    router.back();
                 }
-            ]
-        );
-    };
-
-    const toggleMode = () => {
-        setMode(prev => prev === 'edit' ? 'preview' : 'edit');
+            }
+        ]);
     };
 
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" />
+                <ActivityIndicator size="large" color={theme.colors.primary} />
             </View>
         );
     }
@@ -129,62 +144,46 @@ export default function NoteEditorScreen() {
             <Stack.Screen
                 options={{
                     headerTitle: '',
-                    headerTransparent: true, // Make header transparent
-                    headerTintColor: '#FEA00A', // Back button color
+                    headerTransparent: true,
+                    headerTintColor: theme.colors.primary,
                     headerRight: () => (
                         <View style={styles.headerButtons}>
-                            <Text style={styles.saveStatus}>{isSaving ? 'Saving...' : ''}</Text>
-                            <Pressable onPress={toggleMode} style={styles.iconButton}>
-                                {/* Circle icon background for visibility */}
-                                <View style={styles.circleButton}>
-                                    <Ionicons name={mode === 'edit' ? "checkmark" : "create"} size={20} color="#FEA00A" />
-                                </View>
-                            </Pressable>
-
-                            <Pressable onPress={handleDelete} style={styles.iconButton}>
-                                <View style={styles.circleButton}>
-                                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                                </View>
-                            </Pressable>
+                            <Text style={styles.saveStatus}>{isSaving ? 'Saving...' : 'Saved'}</Text>
+                            <TouchableOpacity onPress={handleDelete}>
+                                <Ionicons name="trash-outline" size={24} color={theme.colors.danger} />
+                            </TouchableOpacity>
                         </View>
                     ),
-                    headerBackground: () => <View style={{ backgroundColor: 'rgba(255,255,255,0.9)', flex: 1 }} /> // Semi transparent background
+                    headerBackground: () => <View style={{ backgroundColor: theme.colors.background, opacity: 0.95, flex: 1 }} />
                 }}
             />
 
-            <View style={styles.editorContainer}>
-                {mode === 'edit' ? (
-                    <>
-                        <TextInput
-                            style={styles.titleInput}
-                            placeholder="Title"
-                            value={title}
-                            onChangeText={onChangeTitle}
-                            maxLength={100}
-                            placeholderTextColor="#999"
-                        />
-                        <View style={styles.metaRow}>
-                            <TouchableOpacity onPress={() => setFolderModalVisible(true)} style={styles.folderChip}>
-                                <Text style={styles.folderText}>{currentFolderName}</Text>
-                                <Ionicons name="chevron-down" size={14} color="#999" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <MarkdownEditor
-                            value={content}
-                            onChangeText={onChangeContent}
-                            style={styles.editorInput}
-                        />
-                    </>
-                ) : (
-                    <View style={styles.previewContainer}>
-                        <Text style={styles.previewTitle}>{title}</Text>
-                        <MarkdownPreview content={content} />
-                    </View>
-                )}
+            <View style={styles.metaContainer}>
+                <TextInput
+                    style={styles.titleInput}
+                    placeholder="Title"
+                    value={title}
+                    onChangeText={onChangeTitle}
+                    placeholderTextColor={theme.colors.textSecondary}
+                />
+                {/* Folder Selector */}
+                <TouchableOpacity onPress={() => setFolderModalVisible(true)} style={styles.folderRow}>
+                    <Text style={styles.folderLabel}>Folder:</Text>
+                    <Text style={styles.folderValue}>{currentFolderName}</Text>
+                    <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
+                </TouchableOpacity>
             </View>
 
-            {/*... modals keep same ...*/}
+            <RichText editor={editor} style={styles.richText} />
+
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+            >
+                <Toolbar editor={editor} />
+            </KeyboardAvoidingView>
+
+            {/* Modal Logic (Simplified for brevity, kept existing simplified) */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -214,7 +213,6 @@ export default function NoteEditorScreen() {
                     </View>
                 </View>
             </Modal>
-
         </View>
     );
 }
@@ -222,12 +220,7 @@ export default function NoteEditorScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
-    },
-    editorContainer: {
-        flex: 1,
-        paddingTop: 100, // Space for transparent header
-        paddingHorizontal: 20,
+        backgroundColor: theme.colors.background,
     },
     loadingContainer: {
         flex: 1,
@@ -237,56 +230,39 @@ const styles = StyleSheet.create({
     headerButtons: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-    },
-    iconButton: {
-        padding: 0,
-    },
-    circleButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#f2f2f7',
-        justifyContent: 'center',
-        alignItems: 'center',
+        gap: 16,
     },
     saveStatus: {
         fontSize: 12,
-        color: '#ccc',
-        marginRight: 8,
+        color: theme.colors.textSecondary,
     },
-    metaRow: {
-        marginBottom: 16,
-    },
-    folderChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    folderText: {
-        fontSize: 14,
-        color: '#999',
-        fontWeight: '500',
+    metaContainer: {
+        marginTop: 100, // Header clearance
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+        paddingBottom: 10,
     },
     titleInput: {
-        fontSize: 34,
-        fontWeight: 'bold',
-        color: '#000',
+        ...theme.typography.header,
         marginBottom: 8,
     },
-    editorInput: {
-        fontSize: 17,
-        lineHeight: 24,
-        color: '#000',
+    folderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
-    previewContainer: {
+    folderLabel: {
+        ...theme.typography.label,
+    },
+    folderValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: theme.colors.primary,
+    },
+    richText: {
         flex: 1,
-    },
-    previewTitle: {
-        fontSize: 34,
-        fontWeight: 'bold',
-        color: '#000',
-        marginBottom: 20,
+        backgroundColor: theme.colors.background,
     },
     // Modal styles
     modalOverlay: {
