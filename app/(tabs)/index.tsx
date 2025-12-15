@@ -35,6 +35,10 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Notes</Text>
+      </View>
+
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" />
@@ -47,14 +51,14 @@ export default function HomeScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No notes yet. Create one!</Text>
+              <Text style={styles.emptyText}>No notes yet</Text>
             </View>
           }
         />
       )}
 
       <Pressable style={styles.fab} onPress={handleCreateNote}>
-        <Ionicons name="add" size={32} color="white" />
+        <Ionicons name="create-outline" size={28} color="#FEA00A" />
       </Pressable>
     </View>
   );
@@ -63,7 +67,17 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
+    paddingTop: 60, // Safe area ish
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    color: '#000',
   },
   centered: {
     flex: 1,
@@ -71,31 +85,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 80, // Space for FAB
+    paddingHorizontal: 20,
+    paddingBottom: 80,
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#007AFF', // System Blue
+    bottom: 30,
+    right: 30,
+    // No background, just icon style for minimal
+    // Or minimal circle
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
   emptyState: {
-    padding: 24,
+    padding: 40,
     alignItems: 'center',
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: '#999',
   }
 });
