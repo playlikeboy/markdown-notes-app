@@ -92,30 +92,41 @@ export default function SettingsScreen() {
                 renderSectionHeader={({ section: { title } }) => (
                     <Text style={styles.sectionHeader}>{title}</Text>
                 )}
-                renderItem={({ item }) => (
-                    <View style={styles.row}>
-                        <View style={styles.rowLeft}>
-                            <View style={[styles.iconContainer, item.destructive && styles.iconDestructive]}>
-                                <Ionicons name={item.icon as any} size={20} color={item.destructive ? '#fff' : '#007AFF'} />
+                renderItem={({ item, index, section }) => {
+                    const isFirst = index === 0;
+                    const isLast = index === section.data.length - 1;
+
+                    return (
+                        <View style={[
+                            styles.row,
+                            isFirst && { borderTopLeftRadius: 10, borderTopRightRadius: 10 },
+                            isLast && { borderBottomLeftRadius: 10, borderBottomRightRadius: 10 },
+                            !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#c7c7cc', marginLeft: 16 } // Separator inset
+                        ]}>
+                            <View style={[styles.rowLeft, !isLast && { marginLeft: -16, paddingLeft: 16 }]}>
+                                {/* Hack to fix alignment with inset separator */}
+                                <View style={[styles.iconContainer, item.destructive && styles.iconDestructive]}>
+                                    <Ionicons name={item.icon as any} size={20} color={item.destructive ? '#FF3B30' : '#007AFF'} />
+                                </View>
+                                <Text style={[styles.rowTitle, item.destructive && styles.textDestructive]}>{item.title}</Text>
                             </View>
-                            <Text style={[styles.rowTitle, item.destructive && styles.textDestructive]}>{item.title}</Text>
+
+                            {item.type === 'switch' && (
+                                <Switch value={!!item.value} onValueChange={item.onValueChange} />
+                            )}
+
+                            {item.type === 'info' && (
+                                <Text style={styles.infoText}>{item.value}</Text>
+                            )}
+
+                            {item.type === 'button' && (
+                                <Pressable onPress={item.onPress}>
+                                    <Ionicons name="chevron-forward" size={20} color="#c7c7cc" />
+                                </Pressable>
+                            )}
                         </View>
-
-                        {item.type === 'switch' && (
-                            <Switch value={!!item.value} onValueChange={item.onValueChange} />
-                        )}
-
-                        {item.type === 'info' && (
-                            <Text style={styles.infoText}>{item.value}</Text>
-                        )}
-
-                        {item.type === 'button' && (
-                            <Pressable onPress={item.onPress}>
-                                <Ionicons name="chevron-forward" size={20} color="#ccc" />
-                            </Pressable>
-                        )}
-                    </View>
-                )}
+                    )
+                }}
                 contentContainerStyle={styles.listContent}
             />
         </View>
@@ -126,34 +137,45 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f2f2f7', // iOS grouped table background
+        paddingTop: 60,
     },
     header: {
         fontSize: 34,
         fontWeight: 'bold',
-        padding: 16,
-        paddingBottom: 0,
-        marginTop: 40,
+        paddingHorizontal: 20,
+        marginBottom: 20,
+        color: '#000',
     },
     listContent: {
-        padding: 16,
+        paddingHorizontal: 20,
+        paddingBottom: 40,
     },
     sectionHeader: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '600',
-        color: '#666',
+        color: '#8e8e93',
         textTransform: 'uppercase',
         marginTop: 24,
         marginBottom: 8,
-        marginLeft: 16,
+        marginLeft: 4, // Align with cell content better
     },
     row: {
         backgroundColor: '#fff',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 0, // In a real list, only last item needs radius
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+    },
+    // Rounded corners logic handled potentially in renderItem or simpler: just use full blocks for now like iOS often does
+    // But for a true group look we want top/bottom radius. Let's try a simpler approach where we just give them all radius if they are standalone, or...
+    // simpler: Let's make the list item visually clean.
+    rowWrapper: {
+        overflow: 'hidden',
+        // We will apply borderRadius to the first and last items in renderItem logic ideally
+        // For now let's just use a block style that looks "Modern Group" (inset)
+        borderRadius: 10,
+        marginBottom: 0,
     },
     rowLeft: {
         flexDirection: 'row',
@@ -169,7 +191,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     iconDestructive: {
-        backgroundColor: '#FF3B30',
+        backgroundColor: '#FFE5E5', // Lighter red bg
     },
     rowTitle: {
         fontSize: 17,
@@ -180,6 +202,6 @@ const styles = StyleSheet.create({
     },
     infoText: {
         fontSize: 17,
-        color: '#888',
+        color: '#8e8e93',
     },
 });

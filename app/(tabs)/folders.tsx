@@ -53,13 +53,17 @@ export default function FoldersScreen() {
 
     return (
         <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Folders</Text>
+            </View>
+
             <FlatList
                 data={folders}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View style={styles.folderRow}>
                         <View style={styles.folderInfo}>
-                            <Ionicons name="folder" size={24} color="#007AFF" />
+                            <Ionicons name="folder-outline" size={24} color="#FEA00A" />
                             <Text style={styles.folderName}>{item.name}</Text>
                         </View>
                         <TouchableOpacity onPress={() => handleDeleteFolder(item.id)}>
@@ -76,7 +80,7 @@ export default function FoldersScreen() {
             />
 
             <Pressable style={styles.fab} onPress={() => setModalVisible(true)}>
-                <Ionicons name="add" size={32} color="white" />
+                <Ionicons name="add" size={32} color="#FEA00A" />
             </Pressable>
 
             <Modal
@@ -114,17 +118,27 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        paddingTop: 60,
+    },
+    header: {
+        paddingHorizontal: 20,
+        paddingBottom: 10,
+    },
+    headerTitle: {
+        fontSize: 34,
+        fontWeight: 'bold',
+        color: '#000',
     },
     listContent: {
-        padding: 16,
+        paddingHorizontal: 20,
     },
     folderRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        paddingVertical: 12, // More breathable
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#c7c7cc',
     },
     folderInfo: {
         flexDirection: 'row',
@@ -132,33 +146,35 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     folderName: {
-        fontSize: 16,
+        fontSize: 17,
+        fontWeight: '500',
         color: '#000',
     },
     fab: {
         position: 'absolute',
-        bottom: 24,
-        right: 24,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#007AFF',
+        bottom: 30,
+        right: 30,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 4,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
     },
     emptyState: {
-        padding: 32,
+        padding: 40,
         alignItems: 'center',
     },
     emptyText: {
         color: '#999',
         fontSize: 16,
     },
+    // Modal
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -168,52 +184,45 @@ const styles = StyleSheet.create({
     modalView: {
         width: '80%',
         backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 24,
+        borderRadius: 14, // iOS style
+        padding: 20,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
     },
     modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 17,
+        fontWeight: '600',
         marginBottom: 16,
+        color: '#000',
     },
     input: {
         width: '100%',
-        borderWidth: 1,
-        borderColor: '#ddd',
+        backgroundColor: '#f2f2f7',
         borderRadius: 8,
         padding: 12,
-        marginBottom: 16,
-        fontSize: 16,
+        marginBottom: 20,
+        fontSize: 17,
+        color: '#000',
     },
     modalButtons: {
         flexDirection: 'row',
         gap: 12,
         width: '100%',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between', // Spread buttons
     },
     button: {
+        flex: 1,
         borderRadius: 8,
-        padding: 10,
-        paddingHorizontal: 16,
-        elevation: 2,
+        padding: 12,
+        alignItems: 'center',
     },
     buttonCancel: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#fff',
     },
     buttonSave: {
-        backgroundColor: '#007AFF',
+        backgroundColor: '#000',
     },
     textStyle: {
-        fontWeight: 'bold',
-        textAlign: 'center',
+        fontSize: 17,
+        fontWeight: '600',
     },
 });
